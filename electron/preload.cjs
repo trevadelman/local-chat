@@ -18,6 +18,8 @@ contextBridge.exposeInMainWorld(
       ipcRenderer.invoke('conversation:get', { id }),
     deleteConversation: (id) => 
       ipcRenderer.invoke('conversation:delete', { id }),
+    updateConversation: (id, title) =>
+      ipcRenderer.invoke('conversation:update', { id, title }),
     addMessage: (conversation_id, role, content) => 
       ipcRenderer.invoke('message:add', { conversation_id, role, content }),
     getMessages: (conversation_id) => 

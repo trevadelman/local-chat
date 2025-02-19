@@ -60,6 +60,7 @@ declare global {
       listConversations: () => Promise<Conversation[]>
       getConversation: (id: string) => Promise<Conversation | undefined>
       deleteConversation: (id: string) => Promise<void>
+      updateConversation: (id: string, title: string) => Promise<Conversation>
       addMessage: (conversation_id: string, role: 'user' | 'assistant', content: string) => Promise<Message>
       getMessages: (conversation_id: string) => Promise<Message[]>
       

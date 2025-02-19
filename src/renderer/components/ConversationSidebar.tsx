@@ -10,6 +10,8 @@ interface ConversationSidebarProps {
 export function ConversationSidebar({ onSelectConversation, currentConversation, onNewChat }: ConversationSidebarProps) {
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(true)
+  const [editingId, setEditingId] = useState<string | null>(null)
+  const [editTitle, setEditTitle] = useState('')
 
   useEffect(() => {
     loadConversations()
@@ -36,6 +38,20 @@ export function ConversationSidebar({ onSelectConversation, currentConversation,
       }
     } catch (error) {
       console.error('Error deleting conversation:', error)
+    }
+  }
+
+  const handleUpdateTitle = async (e: React.FormEvent, conversation: Conversation) => {
+    e.preventDefault()
+    e.stopPropagation()
+    try {
+      const updatedConversation = await window.api.updateConversation(conversation.id, editTitle)
+      setConversations(prev => prev.map(c => 
+        c.id === conversation.id ? updatedConversation : c
+      ))
+      setEditingId(null)
+    } catch (error) {
+      console.error('Error updating conversation:', error)
     }
   }
 
@@ -85,9 +101,43 @@ export function ConversationSidebar({ onSelectConversation, currentConversation,
           >
             <div className="flex justify-between items-start">
               <div className="flex-1 min-w-0">
-                <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
-                  {conversation.title}
-                </h3>
+                {editingId === conversation.id ? (
+                  <form 
+                    onSubmit={(e) => handleUpdateTitle(e, conversation)}
+                    onClick={(e) => e.stopPropagation()}
+                    className="flex items-center gap-1"
+                  >
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full px-2 py-1 text-sm bg-white dark:bg-gray-800 border dark:border-gray-600 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter title..."
+                      autoFocus
+                    />
+                    <button
+                      type="submit"
+                      className="p-1 text-green-600 hover:text-green-700 dark:text-green-400"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditingId(null)}
+                      className="p-1 text-red-600 hover:text-red-700 dark:text-red-400"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </form>
+                ) : (
+                  <h3 className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                    {conversation.title}
+                  </h3>
+                )}
                 <p className="text-xs text-gray-500 dark:text-gray-400">
                   {formatDate(conversation.created_at)}
                 </p>
@@ -95,24 +145,50 @@ export function ConversationSidebar({ onSelectConversation, currentConversation,
                   {conversation.model_name}
                 </p>
               </div>
-              <button
-                onClick={(e) => handleDelete(e, conversation)}
-                className="ml-2 p-1 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                  />
-                </svg>
-              </button>
+              {editingId !== conversation.id && (
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setEditingId(conversation.id)
+                      setEditTitle(conversation.title)
+                    }}
+                    className="p-1 text-gray-400 hover:text-blue-500 dark:text-gray-500 dark:hover:text-blue-400"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                      />
+                    </svg>
+                  </button>
+                  <button
+                    onClick={(e) => handleDelete(e, conversation)}
+                    className="p-1 text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400"
+                  >
+                    <svg
+                      className="w-4 h-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))

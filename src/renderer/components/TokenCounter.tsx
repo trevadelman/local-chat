@@ -30,7 +30,7 @@ export function TokenCounter({ promptTokens, responseTokens, maxContext }: Token
           {totalTokens.toLocaleString()} / {maxContext.toLocaleString()} tokens ({percentageUsed}%)
         </span>
       </div>
-      <div className="h-1 w-20 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+      <div className="h-1 w-20 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden group relative">
         <div 
           className={`h-full ${
             percentageUsed > 90 
@@ -41,10 +41,28 @@ export function TokenCounter({ promptTokens, responseTokens, maxContext }: Token
           }`}
           style={{ width: `${Math.min(percentageUsed, 100)}%` }}
         />
+        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+          {percentageUsed > 90 
+            ? 'High usage: Consider starting a new chat'
+            : percentageUsed > 75 
+              ? 'Moderate usage: Approaching context limit'
+              : 'Low usage: Plenty of context available'
+          }
+        </div>
       </div>
       <div className="flex gap-2">
-        <span title="Prompt tokens">🔵 {promptTokens.toLocaleString()}</span>
-        <span title="Response tokens">🟣 {responseTokens.toLocaleString()}</span>
+        <div className="group relative">
+          <span>🔵 {promptTokens.toLocaleString()}</span>
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            Prompt tokens (your input + conversation history)
+          </div>
+        </div>
+        <div className="group relative">
+          <span>🟣 {responseTokens.toLocaleString()}</span>
+          <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 text-xs text-white bg-gray-900 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            Response tokens (model's output)
+          </div>
+        </div>
       </div>
     </div>
   )

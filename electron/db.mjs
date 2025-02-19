@@ -41,6 +41,12 @@ export const dbOperations = {
     VALUES (?, ?, ?, datetime('now'))
   `),
 
+  updateConversation: db.prepare(`
+    UPDATE conversations
+    SET title = ?
+    WHERE id = ?
+  `),
+
   getConversation: db.prepare(`
     SELECT * FROM conversations WHERE id = ?
   `),
@@ -84,6 +90,11 @@ export const db_helpers = {
 
   deleteConversation(id) {
     dbOperations.deleteConversation.run(id)
+  },
+
+  updateConversationTitle(id, title) {
+    dbOperations.updateConversation.run(title, id)
+    return dbOperations.getConversation.get(id)
   },
 
   addMessage(conversationId, role, content) {

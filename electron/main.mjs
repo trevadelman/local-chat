@@ -202,6 +202,15 @@ async function setupIpcHandlers(mainWindow) {
     }
   })
 
+  ipcMain.handle('conversation:update', async (_, { id, title }) => {
+    try {
+      return db_helpers.updateConversationTitle(id, title)
+    } catch (error) {
+      console.error('Error updating conversation:', error)
+      throw { message: 'Failed to update conversation', details: error.message }
+    }
+  })
+
   ipcMain.handle('message:add', async (_, { conversation_id, role, content }) => {
     try {
       return db_helpers.addMessage(conversation_id, role, content)
