@@ -323,7 +323,7 @@ Show your reasoning process in <think> tags before your response.`
     }
   }
 
-  const renderMessage = (content: string, messageId: string, isStreaming: boolean = false) => {
+  const renderMessage = (content: string, messageId: string) => {
     const { reasoning, response } = processContent(content)
     const isExpanded = expandedReasonings.has(messageId)
 
@@ -490,7 +490,7 @@ Show your reasoning process in <think> tags before your response.`
             {streamingContent && (
               <div className="flex justify-start">
                 <div className="max-w-[80%] rounded-lg px-4 py-2 bg-gray-100 dark:bg-gray-700">
-                  {renderMessage(streamingContent, 'streaming', true)}
+                  {renderMessage(streamingContent, 'streaming')}
                 </div>
               </div>
             )}

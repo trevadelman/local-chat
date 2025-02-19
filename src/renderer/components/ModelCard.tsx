@@ -1,4 +1,3 @@
-import React from 'react'
 import { OllamaModel } from '../types'
 
 interface ModelCardProps {

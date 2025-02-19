@@ -12,9 +12,12 @@
     "preview": "vite preview",
     "electron:dev": "cross-env NODE_ENV=development concurrently \"npm run dev\" \"wait-on tcp:5173 && electron .\"",
     "electron:build": "npm run build && electron-builder",
+    "build:mac": "npm run build && electron-builder --mac",
+    "build:dmg": "npm run build && electron-builder --mac dmg",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"electron/**/*.{mjs,ts}\"",
-    "lint:fix": "eslint . --ext ts,tsx,mjs --fix"
+    "lint:fix": "eslint . --ext ts,tsx,mjs --fix",
+    "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [
     "ollama",
@@ -23,12 +26,11 @@
     "electron",
     "react"
   ],
-  "author": "",
+  "author": "Trevor Adelman",
   "license": "MIT",
   "dependencies": {
     "axios": "^1.7.9",
     "better-sqlite3": "^9.6.0",
-    "electron": "^28.1.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-markdown": "^9.0.3",
@@ -39,6 +41,7 @@
   },
   "devDependencies": {
     "@tailwindcss/typography": "^0.5.16",
+    "electron": "^28.1.0",
     "@types/better-sqlite3": "^7.6.12",
     "@types/react": "^18.2.43",
     "@types/react-dom": "^18.2.17",
@@ -49,7 +52,7 @@
     "autoprefixer": "^10.4.16",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",
-    "electron-builder": "^24.9.1",
+    "electron-builder": "^24.13.3",
     "electron-rebuild": "^3.2.9",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
@@ -68,17 +71,45 @@
     "rimraf": "^5.0.5"
   },
   "build": {
-    "appId": "com.local-chat.app",
+    "appId": "com.trevadelman.localchat",
+    "productName": "Local Chat",
+    "copyright": "Copyright © 2025 Trevor Adelman",
     "mac": {
-      "category": "public.app-category.developer-tools"
+      "category": "public.app-category.developer-tools",
+      "icon": "build/icon.icns",
+      "target": ["dmg", "zip"],
+      "darkModeSupport": true,
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "entitlements": "build/entitlements.mac.plist",
+      "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "dmg": {
+      "icon": "build/icon.icns",
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ],
+      "window": {
+        "width": 540,
+        "height": 400
+      }
     },
     "files": [
       "dist/**/*",
       "electron/**/*"
     ],
     "directories": {
-      "buildResources": "assets",
-      "output": "release"
+      "buildResources": "build",
+      "output": "dist"
     }
   }
 }

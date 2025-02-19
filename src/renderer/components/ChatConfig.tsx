@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { OllamaModel } from '../types'
 import { ModelCard } from './ModelCard'
 import { ResponseModeCard } from './ResponseModeCard'
@@ -9,12 +9,6 @@ interface ChatConfigProps {
   onModelChange: (model: string) => void
   responseMode: 'concise' | 'normal' | 'longform'
   onResponseModeChange: (mode: 'concise' | 'normal' | 'longform') => void
-}
-
-const ResponseModeDescriptions = {
-  concise: 'Brief, direct answers focusing on key points',
-  normal: 'Balanced responses with explanations and examples',
-  longform: 'Detailed analysis with comprehensive context'
 }
 
 export function ChatConfig({

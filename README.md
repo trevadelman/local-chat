@@ -2,6 +2,15 @@
 
 A native macOS desktop application for chatting with your local Ollama models. Built with Electron and React, this application provides a clean, modern interface for interacting with AI models running on your machine.
 
+
+## Quick Start
+
+See [SETUP.md](SETUP.md) for detailed instructions on:
+- Development setup
+- Building for distribution
+- Installing the built app
+- Troubleshooting common issues
+
 ## Features
 
 ### Model Management ✅
@@ -89,46 +98,6 @@ graph TD
 - **React Markdown**: Message rendering with GFM support
 - **Axios**: API communication with streaming support
 
-## Development Setup
-
-1. Prerequisites:
-   - Node.js (v18 or later)
-   - npm (v9 or later)
-   - [Ollama](https://ollama.ai) installed and running locally
-
-2. Installation:
-   ```bash
-   # Clone the repository
-   git clone https://github.com/trevadelman/local-chat.git
-   cd local-chat
-   
-   # Install dependencies
-   npm install
-   
-   # Start development server
-   npm run electron:dev
-   ```
-
-3. Development Commands:
-   ```bash
-   # Start development server
-   npm run electron:dev
-   
-   # Build the application
-   npm run build
-   
-   # Package for distribution
-   npm run electron:build
-   
-   # Lint code
-   npm run lint
-   
-   # Format code
-   npm run format
-   
-   # Type check
-   npm run type-check
-   ```
 
 ## Project Structure
 
@@ -162,7 +131,7 @@ local-chat/
 
 ## Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please feel free to submit a Pull Request. See [SETUP.md](SETUP.md) for development instructions.
 
 ## License
 
