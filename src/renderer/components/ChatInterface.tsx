@@ -103,6 +103,21 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
     try {
       const loadedMessages = await window.api.getMessages(conversationId)
       setMessages(loadedMessages)
+
+      // Convert messages to Ollama format for token counting
+      const ollamaMessages: OllamaMessage[] = loadedMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+
+      // Get token counts for loaded conversation
+      const response = await window.api.chat(modelName, ollamaMessages, false)
+      if (response.prompt_eval_count) {
+        setPromptTokens(response.prompt_eval_count)
+      }
+      if (response.eval_count) {
+        setResponseTokens(response.eval_count)
+      }
     } catch (error) {
       console.error('Error loading messages:', error)
     }
@@ -120,9 +135,13 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
     })
   }
 
-  // Reset expanded reasonings when conversation changes
+  // Reset states when conversation changes
   useEffect(() => {
     setExpandedReasonings(new Set())
+    if (!currentConversation) {
+      setPromptTokens(0)
+      setResponseTokens(0)
+    }
   }, [currentConversation])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -194,13 +213,16 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
         }
       })
 
-      // Convert messages to Ollama format
-      const ollamaMessages: OllamaMessage[] = newMessages.map(msg => ({
+      // Get full conversation history
+      const conversationHistory = await window.api.getMessages(activeConversation.id)
+      
+      // Convert full history to Ollama format
+      const ollamaMessages: OllamaMessage[] = conversationHistory.map(msg => ({
         role: msg.role,
         content: msg.content
       }))
 
-      // Start streaming chat
+      // Start streaming chat with full history
       await window.api.chat(modelName, ollamaMessages, true)
     } catch (error) {
       console.error('Chat error:', error)
