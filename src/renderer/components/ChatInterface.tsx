@@ -5,6 +5,7 @@ import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
 import { Message, ChatChunk, Conversation, OllamaMessage } from '../types'
+import { TokenCounter } from './TokenCounter'
 
 interface ChatInterfaceProps {
   modelName: string
@@ -40,19 +41,39 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
   const [loading, setLoading] = useState(false)
   const [streamingContent, setStreamingContent] = useState('')
   const [expandedReasonings, setExpandedReasonings] = useState<Set<string>>(new Set())
+  const [promptTokens, setPromptTokens] = useState(0)
+  const [responseTokens, setResponseTokens] = useState(0)
+  const [maxContext, setMaxContext] = useState(4096) // Default, will be updated from model info
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
   const accumulatedContentRef = useRef('')
 
-  // Load messages when conversation changes
+  // Load model info and messages when model or conversation changes
   useEffect(() => {
+    const loadModelInfo = async () => {
+      try {
+        const models = await window.api.listModels()
+        const model = models.find(m => m.name === modelName)
+        if (model?.details?.parameter_size) {
+          // Extract context length from parameter size (e.g. "7B" -> 4096, "13B" -> 8192)
+          const sizeInB = parseInt(model.details.parameter_size.replace('B', ''))
+          const contextLength = sizeInB <= 7 ? 4096 : 8192
+          setMaxContext(contextLength)
+        }
+      } catch (error) {
+        console.error('Error loading model info:', error)
+      }
+    }
+
+    loadModelInfo()
+
     if (currentConversation) {
       loadMessages(currentConversation.id)
     } else {
       setMessages([])
     }
-  }, [currentConversation])
+  }, [modelName, currentConversation])
 
   // Auto-resize textarea as content grows
   useEffect(() => {
@@ -163,6 +184,13 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
           })
           setStreamingContent('')
           setLoading(false)
+          // Update token counts
+          if (data.prompt_eval_count) {
+            setPromptTokens(data.prompt_eval_count)
+          }
+          if (data.eval_count) {
+            setResponseTokens(data.eval_count)
+          }
         }
       })
 
@@ -368,30 +396,43 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
       </div>
 
       {/* Input form */}
-      <form onSubmit={handleSubmit} className="flex space-x-4">
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Type your message... (Shift + Enter for new line)"
-            className="w-full px-4 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden min-h-[42px] max-h-[200px]"
-            disabled={loading}
-            rows={1}
-          />
-          <div className="absolute right-2 bottom-2 text-xs text-gray-400">
-            Press Enter to send
+      <div className="space-y-2">
+        {/* Token counter */}
+        {(promptTokens > 0 || responseTokens > 0) && (
+          <div className="px-4">
+            <TokenCounter 
+              promptTokens={promptTokens}
+              responseTokens={responseTokens}
+              maxContext={maxContext}
+            />
           </div>
-        </div>
-        <button
-          type="submit"
-          disabled={loading || !input.trim()}
-          className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-        >
-          Send
-        </button>
-      </form>
+        )}
+
+        <form onSubmit={handleSubmit} className="flex space-x-4 px-4">
+          <div className="flex-1 relative">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Type your message... (Shift + Enter for new line)"
+              className="w-full px-4 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden min-h-[42px] max-h-[200px]"
+              disabled={loading}
+              rows={1}
+            />
+            <div className="absolute right-2 bottom-2 text-xs text-gray-400">
+              Press Enter to send
+            </div>
+          </div>
+          <button
+            type="submit"
+            disabled={loading || !input.trim()}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+          >
+            Send
+          </button>
+        </form>
+      </div>
     </div>
   )
 }

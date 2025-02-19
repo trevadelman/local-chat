@@ -64,6 +64,9 @@
    - Implement message streaming ✅
    - Add loading indicators ✅
    - Create error handling UI ✅
+   - Add collapsible reasoning sections ✅
+   - Implement token counting and context tracking ✅
+   - Add visual indicators for token usage ✅
 
 3. Chat History ✅
    Phase 1: Basic Storage ✅

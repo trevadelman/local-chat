@@ -18,6 +18,28 @@ A native macOS desktop application for chatting with your local Ollama models. B
 - Multi-line input with auto-resize
 - Clear loading and error states
 - Dark mode support
+- Collapsible reasoning sections for models that expose their thought process
+- Token counter with context window tracking
+- Visual indicators for token usage thresholds
+
+### Token Counter
+The token counter helps you track your usage of the model's context window:
+
+```
+[🧮] 1,234 / 4,096 tokens (30%) [▓▓░░░░░░░░] 🔵 500 🟣 734
+```
+
+- Total tokens / Context window size with percentage
+- Visual progress bar that changes color based on usage:
+  - Green: < 75% used
+  - Yellow: 75-90% used
+  - Red: > 90% used
+- 🔵 Prompt tokens (your input + conversation history)
+- 🟣 Response tokens (model's output)
+
+The context window size is automatically determined based on the model:
+- 4,096 tokens for 7B models
+- 8,192 tokens for larger models
 
 ### Chat History ✅
 - Persistent conversation storage with SQLite
