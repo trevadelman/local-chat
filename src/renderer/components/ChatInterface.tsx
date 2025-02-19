@@ -4,10 +4,12 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
-import { Message, ChatChunk } from '../types'
+import { Message, ChatChunk, Conversation, OllamaMessage } from '../types'
 
 interface ChatInterfaceProps {
   modelName: string
+  currentConversation: Conversation | null
+  onConversationCreated: (conversation: Conversation) => void
 }
 
 interface CodeProps {
@@ -17,7 +19,7 @@ interface CodeProps {
   children?: React.ReactNode
 }
 
-export function ChatInterface({ modelName }: ChatInterfaceProps) {
+export function ChatInterface({ modelName, currentConversation, onConversationCreated }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -26,6 +28,15 @@ export function ChatInterface({ modelName }: ChatInterfaceProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
   const accumulatedContentRef = useRef('')
+
+  // Load messages when conversation changes
+  useEffect(() => {
+    if (currentConversation) {
+      loadMessages(currentConversation.id)
+    } else {
+      setMessages([])
+    }
+  }, [currentConversation])
 
   // Auto-resize textarea as content grows
   useEffect(() => {
@@ -51,6 +62,15 @@ export function ChatInterface({ modelName }: ChatInterfaceProps) {
     }
   }, [])
 
+  const loadMessages = async (conversationId: string) => {
+    try {
+      const loadedMessages = await window.api.getMessages(conversationId)
+      setMessages(loadedMessages)
+    } catch (error) {
+      console.error('Error loading messages:', error)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!input.trim() || loading) return
@@ -66,12 +86,27 @@ export function ChatInterface({ modelName }: ChatInterfaceProps) {
       textareaRef.current.style.height = 'auto'
     }
 
-    // Add user message to chat
-    const userMessageObj: Message = { role: 'user', content: userMessage }
-    const newMessages = [...messages, userMessageObj]
-    setMessages(newMessages)
-
     try {
+      // Create new conversation if none exists
+      let activeConversation = currentConversation
+      if (!activeConversation) {
+        const newConversation = await window.api.createConversation(
+          'New Chat',
+          modelName
+        )
+        activeConversation = newConversation
+        onConversationCreated(newConversation)
+      }
+
+      // Add user message to database and state
+      const savedUserMessage = await window.api.addMessage(
+        activeConversation.id,
+        'user',
+        userMessage
+      )
+      const newMessages = [...messages, savedUserMessage]
+      setMessages(newMessages)
+
       // Clean up previous subscription if exists
       if (cleanupRef.current) {
         cleanupRef.current()
@@ -85,25 +120,38 @@ export function ChatInterface({ modelName }: ChatInterfaceProps) {
           setStreamingContent(accumulatedContentRef.current)
         }
         if (data.done) {
-          setMessages(prev => [
-            ...prev,
-            { role: 'assistant', content: accumulatedContentRef.current }
-          ])
+          // Save assistant's message to database
+          window.api.addMessage(
+            activeConversation.id,
+            'assistant',
+            accumulatedContentRef.current
+          ).then(savedMessage => {
+            setMessages(prev => [...prev, savedMessage])
+          })
           setStreamingContent('')
           setLoading(false)
         }
       })
 
+      // Convert messages to Ollama format
+      const ollamaMessages: OllamaMessage[] = newMessages.map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }))
+
       // Start streaming chat
-      await window.api.chat(modelName, newMessages, true)
+      await window.api.chat(modelName, ollamaMessages, true)
     } catch (error) {
       console.error('Chat error:', error)
       // Add error message to chat
       const errorMessage: Message = {
+        id: 'error',
+        conversation_id: currentConversation?.id || 'error',
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.'
+        content: 'Sorry, I encountered an error. Please try again.',
+        created_at: new Date().toISOString()
       }
-      setMessages([...newMessages, errorMessage])
+      setMessages(prev => [...prev, errorMessage])
       setLoading(false)
     }
   }
@@ -190,9 +238,9 @@ export function ChatInterface({ modelName }: ChatInterfaceProps) {
           </p>
         ) : (
           <>
-            {messages.map((message, index) => (
+            {messages.map((message) => (
               <div
-                key={index}
+                key={message.id}
                 className={`flex ${
                   message.role === 'user' ? 'justify-end' : 'justify-start'
                 }`}

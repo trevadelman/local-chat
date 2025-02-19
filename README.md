@@ -19,11 +19,12 @@ A native macOS desktop application for chatting with your local Ollama models. B
 - Clear loading and error states
 - Dark mode support
 
-### Chat History (Coming Soon)
-- Persistent conversation storage
-- Browse and search past conversations
-- Delete or export conversations
-- Conversation organization
+### Chat History ✅
+- Persistent conversation storage with SQLite
+- Browse and manage conversation history
+- Delete conversations
+- Automatic conversation creation and organization
+- Real-time message syncing
 
 ### System Integration (In Progress)
 - Native macOS application
@@ -123,7 +124,7 @@ local-chat/
 - ✅ Chat interface with markdown and code highlighting
 - ✅ Model management and switching
 - ✅ Dark mode support
-- 🚧 Chat history and persistence
+- ✅ Chat history and persistence
 - 🚧 System integration features
 - 📋 Testing and documentation
 

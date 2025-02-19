@@ -9,6 +9,20 @@ contextBridge.exposeInMainWorld(
     chat: (model, messages, stream = true) => ipcRenderer.invoke('ollama:chat', { model, messages, stream }),
     generateCompletion: (model, prompt) => ipcRenderer.invoke('ollama:generate', { model, prompt }),
     
+    // Chat history methods
+    createConversation: (title, model_name) => 
+      ipcRenderer.invoke('conversation:create', { title, model_name }),
+    listConversations: () => 
+      ipcRenderer.invoke('conversation:list'),
+    getConversation: (id) => 
+      ipcRenderer.invoke('conversation:get', { id }),
+    deleteConversation: (id) => 
+      ipcRenderer.invoke('conversation:delete', { id }),
+    addMessage: (conversation_id, role, content) => 
+      ipcRenderer.invoke('message:add', { conversation_id, role, content }),
+    getMessages: (conversation_id) => 
+      ipcRenderer.invoke('message:list', { conversation_id }),
+    
     // App methods
     isDarkMode: () => ipcRenderer.invoke('app:get-dark-mode'),
     setDarkMode: (dark) => ipcRenderer.invoke('app:set-dark-mode', dark),

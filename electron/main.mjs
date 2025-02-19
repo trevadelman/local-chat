@@ -2,6 +2,7 @@ import { app, BrowserWindow, ipcMain, nativeTheme } from 'electron'
 import path from 'path'
 import { fileURLToPath } from 'url'
 import axios from 'axios'
+import { db_helpers } from './db.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -161,6 +162,61 @@ async function setupIpcHandlers(mainWindow) {
       }
       mainWindow.webContents.send('error', errorMessage)
       throw errorMessage
+    }
+  })
+
+  // Chat history handlers
+  ipcMain.handle('conversation:create', async (_, { title, model_name }) => {
+    try {
+      return db_helpers.createConversation(title, model_name)
+    } catch (error) {
+      console.error('Error creating conversation:', error)
+      throw { message: 'Failed to create conversation', details: error.message }
+    }
+  })
+
+  ipcMain.handle('conversation:list', async () => {
+    try {
+      return db_helpers.listConversations()
+    } catch (error) {
+      console.error('Error listing conversations:', error)
+      throw { message: 'Failed to list conversations', details: error.message }
+    }
+  })
+
+  ipcMain.handle('conversation:get', async (_, { id }) => {
+    try {
+      return db_helpers.getConversation(id)
+    } catch (error) {
+      console.error('Error getting conversation:', error)
+      throw { message: 'Failed to get conversation', details: error.message }
+    }
+  })
+
+  ipcMain.handle('conversation:delete', async (_, { id }) => {
+    try {
+      return db_helpers.deleteConversation(id)
+    } catch (error) {
+      console.error('Error deleting conversation:', error)
+      throw { message: 'Failed to delete conversation', details: error.message }
+    }
+  })
+
+  ipcMain.handle('message:add', async (_, { conversation_id, role, content }) => {
+    try {
+      return db_helpers.addMessage(conversation_id, role, content)
+    } catch (error) {
+      console.error('Error adding message:', error)
+      throw { message: 'Failed to add message', details: error.message }
+    }
+  })
+
+  ipcMain.handle('message:list', async (_, { conversation_id }) => {
+    try {
+      return db_helpers.getMessages(conversation_id)
+    } catch (error) {
+      console.error('Error listing messages:', error)
+      throw { message: 'Failed to list messages', details: error.message }
     }
   })
 
