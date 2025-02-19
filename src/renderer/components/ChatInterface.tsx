@@ -72,11 +72,22 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
         const modelList = await window.api.listModels()
         setModels(modelList)
         if (modelList.length > 0) {
-          setSelectedModel(modelList[0].name)
-          if (modelList[0].details?.parameter_size) {
-            const sizeInB = parseInt(modelList[0].details.parameter_size.replace('B', ''))
-            const contextLength = sizeInB <= 7 ? 4096 : 8192
-            setMaxContext(contextLength)
+          const llamaModel = modelList.find(m => m.name === 'llama3:latest')
+          if (llamaModel) {
+            setSelectedModel(llamaModel.name)
+            if (llamaModel.details?.parameter_size) {
+              const sizeInB = parseInt(llamaModel.details.parameter_size.replace('B', ''))
+              const contextLength = sizeInB <= 7 ? 4096 : 8192
+              setMaxContext(contextLength)
+            }
+          } else {
+            // Fallback to first model if llama not found
+            setSelectedModel(modelList[0].name)
+            if (modelList[0].details?.parameter_size) {
+              const sizeInB = parseInt(modelList[0].details.parameter_size.replace('B', ''))
+              const contextLength = sizeInB <= 7 ? 4096 : 8192
+              setMaxContext(contextLength)
+            }
           }
         }
       } catch (error) {

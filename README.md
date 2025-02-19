@@ -5,10 +5,18 @@ A native macOS desktop application for chatting with your local Ollama models. B
 ## Features
 
 ### Model Management ✅
-- List and select from available local models
-- View detailed model information (parameters, quantization, size)
-- Seamless model switching
+- List and select from available local models with detailed cards
+- View model information (parameters, quantization, size)
+- Seamless model switching with persistent preferences
 - Real-time model status monitoring
+- Default model selection
+
+### Response Modes ✅
+- Concise: Brief, direct answers focusing on key points
+- Normal: Balanced responses with explanations and examples
+- Longform: Detailed analysis with comprehensive context
+- Visual mode selection with descriptive cards
+- Mode persistence across conversations
 
 ### Chat Interface ✅
 - Clean, modern design optimized for AI conversations
@@ -47,6 +55,7 @@ The context window size is automatically determined based on the model:
 - Delete conversations
 - Automatic conversation creation and organization
 - Real-time message syncing
+- Smart conversation titles generated from first message
 
 ### System Integration (In Progress)
 - Native macOS application
@@ -64,7 +73,7 @@ graph TD
     A --> D[Electron Renderer Process]
     D --> E[React UI]
     E --> F[Chat Interface]
-    E --> G[Model Selector]
+    E --> G[Model & Mode Selector]
     E --> H[Chat History]
     C --> H
 ```
@@ -76,7 +85,7 @@ graph TD
 - **TypeScript**: Type-safe development
 - **Vite**: Build tool and development server
 - **TailwindCSS**: Styling with typography plugin
-- **SQLite**: Local storage (coming soon)
+- **SQLite**: Local storage
 - **React Markdown**: Message rendering with GFM support
 - **Axios**: API communication with streaming support
 
@@ -145,6 +154,7 @@ local-chat/
 - ✅ Ollama API integration with streaming support
 - ✅ Chat interface with markdown and code highlighting
 - ✅ Model management and switching
+- ✅ Response mode selection
 - ✅ Dark mode support
 - ✅ Chat history and persistence
 - 🚧 System integration features

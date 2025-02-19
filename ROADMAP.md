@@ -49,11 +49,12 @@
 
 ## Phase 3: Core Features Implementation (In Progress)
 1. Model Management ✅
-   - Create model list view ✅
-   - Implement model details panel ✅
-   - Add model switching ✅
+   - Create model list view with detailed cards ✅
+   - Implement model details panel (parameters, quantization, size) ✅
+   - Add model switching with persistent preferences ✅
    - Create model settings interface ✅
    - Implement model status monitoring ✅
+   - Set default model selection ✅
 
 2. Chat Interface ✅
    - Create chat container ✅
@@ -67,6 +68,9 @@
    - Add collapsible reasoning sections ✅
    - Implement token counting and context tracking ✅
    - Add visual indicators for token usage ✅
+   - Add response mode selection (Concise, Normal, Longform) ✅
+   - Create visual mode selection with descriptive cards ✅
+   - Implement mode persistence across conversations ✅
 
 3. Chat History ✅
    Phase 1: Basic Storage ✅
@@ -77,7 +81,7 @@
    - Enable conversation switching ✅
 
    Phase 2: Enhanced Features (Next)
-   - Add conversation titles
+   - Add smart conversation titles from first message ✅
    - Implement delete functionality ✅
    - Add basic search
    - Enable conversation export to markdown
