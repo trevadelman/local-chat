@@ -20,7 +20,7 @@ export interface Message {
 }
 
 export interface OllamaMessage {
-  role: 'user' | 'assistant'
+  role: 'user' | 'assistant' | 'system'
   content: string
 }
 

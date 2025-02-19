@@ -4,11 +4,11 @@ import remarkGfm from 'remark-gfm'
 import remarkMath from 'remark-math'
 import rehypeKatex from 'rehype-katex'
 import 'katex/dist/katex.min.css'
-import { Message, ChatChunk, Conversation, OllamaMessage } from '../types'
+import { Message, ChatChunk, Conversation, OllamaMessage, OllamaModel } from '../types'
 import { TokenCounter } from './TokenCounter'
+import { ChatConfig } from './ChatConfig'
 
 interface ChatInterfaceProps {
-  modelName: string
   currentConversation: Conversation | null
   onConversationCreated: (conversation: Conversation) => void
 }
@@ -25,6 +25,19 @@ interface ProcessedContent {
   response: string
 }
 
+type ResponseMode = 'concise' | 'normal' | 'longform'
+
+const getSystemPrompt = (mode: ResponseMode) => {
+  switch (mode) {
+    case 'concise':
+      return 'Provide a brief, direct answer focusing only on key points. Do not label or announce that this is a concise response.'
+    case 'normal':
+      return 'Provide a balanced response with explanations and examples.'
+    case 'longform':
+      return 'Provide a detailed analysis with comprehensive context and thorough explanations.'
+  }
+}
+
 function processContent(content: string): ProcessedContent {
   const thinkMatch = content.match(/<think>(.*?)<\/think>/s)
   if (thinkMatch) {
@@ -35,7 +48,7 @@ function processContent(content: string): ProcessedContent {
   return { reasoning: null, response: content.trim() }
 }
 
-export function ChatInterface({ modelName, currentConversation, onConversationCreated }: ChatInterfaceProps) {
+export function ChatInterface({ currentConversation, onConversationCreated }: ChatInterfaceProps) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
@@ -44,36 +57,54 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
   const [promptTokens, setPromptTokens] = useState(0)
   const [responseTokens, setResponseTokens] = useState(0)
   const [maxContext, setMaxContext] = useState(4096) // Default, will be updated from model info
+  const [responseMode, setResponseMode] = useState<ResponseMode>('normal')
+  const [models, setModels] = useState<OllamaModel[]>([])
+  const [selectedModel, setSelectedModel] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const cleanupRef = useRef<(() => void) | null>(null)
   const accumulatedContentRef = useRef('')
 
-  // Load model info and messages when model or conversation changes
+  // Load models on mount
   useEffect(() => {
-    const loadModelInfo = async () => {
+    const loadModels = async () => {
       try {
-        const models = await window.api.listModels()
-        const model = models.find(m => m.name === modelName)
-        if (model?.details?.parameter_size) {
-          // Extract context length from parameter size (e.g. "7B" -> 4096, "13B" -> 8192)
-          const sizeInB = parseInt(model.details.parameter_size.replace('B', ''))
-          const contextLength = sizeInB <= 7 ? 4096 : 8192
-          setMaxContext(contextLength)
+        const modelList = await window.api.listModels()
+        setModels(modelList)
+        if (modelList.length > 0) {
+          setSelectedModel(modelList[0].name)
+          if (modelList[0].details?.parameter_size) {
+            const sizeInB = parseInt(modelList[0].details.parameter_size.replace('B', ''))
+            const contextLength = sizeInB <= 7 ? 4096 : 8192
+            setMaxContext(contextLength)
+          }
         }
       } catch (error) {
-        console.error('Error loading model info:', error)
+        console.error('Error loading models:', error)
       }
     }
 
-    loadModelInfo()
+    loadModels()
+  }, [])
 
+  // Load messages when conversation changes
+  useEffect(() => {
     if (currentConversation) {
       loadMessages(currentConversation.id)
     } else {
       setMessages([])
     }
-  }, [modelName, currentConversation])
+  }, [currentConversation])
+
+  // Update context length when model changes
+  useEffect(() => {
+    const model = models.find(m => m.name === selectedModel)
+    if (model?.details?.parameter_size) {
+      const sizeInB = parseInt(model.details.parameter_size.replace('B', ''))
+      const contextLength = sizeInB <= 7 ? 4096 : 8192
+      setMaxContext(contextLength)
+    }
+  }, [selectedModel, models])
 
   // Auto-resize textarea as content grows
   useEffect(() => {
@@ -111,7 +142,7 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
       }))
 
       // Get token counts for loaded conversation
-      const response = await window.api.chat(modelName, ollamaMessages, false)
+      const response = await window.api.chat(selectedModel, ollamaMessages, false)
       if (response.prompt_eval_count) {
         setPromptTokens(response.prompt_eval_count)
       }
@@ -163,12 +194,39 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
       // Create new conversation if none exists
       let activeConversation = currentConversation
       if (!activeConversation) {
+        // First create with temporary title
         const newConversation = await window.api.createConversation(
           'New Chat',
-          modelName
+          selectedModel
         )
         activeConversation = newConversation
         onConversationCreated(newConversation)
+
+        // Generate a title using the model
+        try {
+          const titleResponse = await window.api.chat(
+            selectedModel,
+            [{
+              role: 'system',
+              content: 'Create a very brief title (max 5 words) for a conversation that starts with this message. Respond with just the title, no quotes or punctuation.'
+            }, {
+              role: 'user',
+              content: userMessage
+            }],
+            false
+          )
+
+          if (titleResponse.message?.content) {
+            // Update conversation with generated title
+            const updatedConversation = await window.api.updateConversation(
+              newConversation.id,
+              titleResponse.message.content.trim()
+            )
+            onConversationCreated(updatedConversation)
+          }
+        } catch (error) {
+          console.error('Error generating title:', error)
+        }
       }
 
       // Add user message to database and state
@@ -216,14 +274,22 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
       // Get full conversation history
       const conversationHistory = await window.api.getMessages(activeConversation.id)
       
-      // Convert full history to Ollama format
-      const ollamaMessages: OllamaMessage[] = conversationHistory.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }))
+      // Convert full history to Ollama format and add system message
+      const ollamaMessages: OllamaMessage[] = [
+        {
+          role: 'system',
+          content: `${getSystemPrompt(responseMode)}
+
+Show your reasoning process in <think> tags before your response.`
+        },
+        ...conversationHistory.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))
+      ]
 
       // Start streaming chat with full history
-      await window.api.chat(modelName, ollamaMessages, true)
+      await window.api.chat(selectedModel, ollamaMessages, true)
     } catch (error) {
       console.error('Chat error:', error)
       // Add error message to chat
@@ -359,11 +425,24 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
 
   return (
     <div className="flex flex-col h-[600px]">
+      {/* Configuration */}
+      <ChatConfig
+        models={models}
+        selectedModel={selectedModel}
+        onModelChange={setSelectedModel}
+        responseMode={responseMode}
+        onResponseModeChange={setResponseMode}
+      />
+
       {/* Chat messages */}
       <div className="flex-1 overflow-y-auto space-y-4 mb-4 p-4 border dark:border-gray-700 rounded-lg">
-        {messages.length === 0 ? (
+        {!selectedModel ? (
           <p className="text-gray-500 dark:text-gray-400 text-center">
-            Start a conversation with {modelName}
+            Select a model to start chatting
+          </p>
+        ) : messages.length === 0 ? (
+          <p className="text-gray-500 dark:text-gray-400 text-center">
+            Start a conversation with {selectedModel}
           </p>
         ) : (
           <>
@@ -430,29 +509,37 @@ export function ChatInterface({ modelName, currentConversation, onConversationCr
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex space-x-4 px-4">
-          <div className="flex-1 relative">
-            <textarea
-              ref={textareaRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your message... (Shift + Enter for new line)"
-              className="w-full px-4 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden min-h-[42px] max-h-[200px]"
-              disabled={loading}
-              rows={1}
-            />
-            <div className="absolute right-2 bottom-2 text-xs text-gray-400">
-              Press Enter to send
+        <form onSubmit={handleSubmit} className="px-4">
+          {!selectedModel ? (
+            <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-2">
+              Please select a model to start chatting
             </div>
+          ) : (
+          <div className="flex space-x-4">
+            <div className="flex-1 relative">
+              <textarea
+                ref={textareaRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message... (Shift + Enter for new line)"
+                className="w-full px-4 py-2 border dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none overflow-hidden min-h-[42px] max-h-[200px]"
+                disabled={loading || !selectedModel}
+                rows={1}
+              />
+              <div className="absolute right-2 bottom-2 text-xs text-gray-400">
+                Press Enter to send
+              </div>
+            </div>
+            <button
+              type="submit"
+              disabled={loading || !input.trim() || !selectedModel}
+              className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+            >
+              Send
+            </button>
           </div>
-          <button
-            type="submit"
-            disabled={loading || !input.trim()}
-            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
-          >
-            Send
-          </button>
+          )}
         </form>
       </div>
     </div>
