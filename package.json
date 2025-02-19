@@ -14,6 +14,7 @@
     "electron:build": "npm run build && electron-builder",
     "build:mac": "npm run build && electron-builder --mac",
     "build:dmg": "npm run build && electron-builder --mac dmg",
+    "build:win": "npm run build && electron-builder --win",
     "type-check": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.{ts,tsx,css}\" \"electron/**/*.{mjs,ts}\"",
     "lint:fix": "eslint . --ext ts,tsx,mjs --fix",
@@ -83,6 +84,26 @@
       "gatekeeperAssess": false,
       "entitlements": "build/entitlements.mac.plist",
       "entitlementsInherit": "build/entitlements.mac.plist"
+    },
+    "win": {
+      "icon": "build/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        },
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Local Chat"
     },
     "dmg": {
       "icon": "build/icon.icns",

@@ -31,8 +31,9 @@ This will launch the app in development mode with hot reloading.
 
 ## Building for Distribution
 
-### Building the macOS App
+### Building the App
 
+#### For macOS
 1. Ensure you're on a Mac with Apple Silicon
 2. Run the build command:
    ```bash
@@ -43,8 +44,19 @@ This will create two files in the `dist` directory:
 - `Local Chat-1.0.0-arm64.dmg` - Installer for macOS
 - `Local Chat-1.0.0-arm64-mac.zip` - Zipped application
 
+#### For Windows
+1. Run the build command:
+   ```bash
+   npm run build:win
+   ```
+
+This will create two files in the `dist` directory:
+- `Local Chat Setup.exe` - Windows installer (NSIS)
+- `Local Chat.exe` - Portable executable
+
 ### Installing the Built App
 
+#### On macOS
 1. Double-click the DMG file
 2. Drag Local Chat to your Applications folder
 3. Launch Local Chat from Applications
@@ -54,6 +66,19 @@ Note: Since the app isn't signed with an Apple Developer certificate, you might 
 1. Right-click (or Control-click) the app in Finder
 2. Select "Open" from the context menu
 3. Click "Open" in the security dialog
+
+#### On Windows
+Option 1 - Installer:
+1. Run `Local Chat Setup.exe`
+2. Choose installation directory
+3. Select whether to create desktop/start menu shortcuts
+4. Complete installation
+5. Launch from Start Menu or desktop shortcut
+
+Option 2 - Portable:
+1. Copy `Local Chat.exe` to desired location
+2. Double-click to run (no installation needed)
+3. (Optional) Create desktop shortcut
 
 ## Running the App
 
