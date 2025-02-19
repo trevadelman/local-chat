@@ -75,3 +75,8 @@ Thumbs.db
 # Debug files
 .debug/
 debug.log
+
+# Windows build files
+*.exe
+*.msi
+*.msix
