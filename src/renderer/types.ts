@@ -51,7 +51,9 @@ declare global {
   interface Window {
     api: {
       // Ollama API methods
+      getOllamaVersion: () => Promise<string>
       listModels: () => Promise<OllamaModel[]>
+      pullModel: (name: string) => Promise<any>
       chat: (model: string, messages: OllamaMessage[], stream?: boolean) => Promise<any>
       generateCompletion: (model: string, prompt: string) => Promise<any>
       

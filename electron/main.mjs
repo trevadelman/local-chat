@@ -47,6 +47,43 @@ function createWindow() {
 // Handle IPC events
 async function setupIpcHandlers(mainWindow) {
   // Ollama API handlers
+  ipcMain.handle('ollama:version', async () => {
+    try {
+      const response = await ollamaApi.get('/version')
+      return response.data.version
+    } catch (error) {
+      console.error('Error getting Ollama version:', error)
+      const errorMessage = {
+        message: 'Failed to get Ollama version',
+        details: error.code === 'ECONNREFUSED'
+          ? 'Unable to connect to Ollama. Please make sure it is running.'
+          : error.message
+      }
+      mainWindow.webContents.send('error', errorMessage)
+      throw errorMessage
+    }
+  })
+
+  ipcMain.handle('ollama:pull-model', async (_, modelName) => {
+    try {
+      const response = await ollamaApi.post('/pull', {
+        name: modelName,
+        stream: false
+      })
+      return response.data
+    } catch (error) {
+      console.error('Error pulling model:', error)
+      const errorMessage = {
+        message: 'Failed to pull model',
+        details: error.code === 'ECONNREFUSED'
+          ? `Unable to connect to Ollama. Error: ${error.message}`
+          : error.message
+      }
+      mainWindow.webContents.send('error', errorMessage)
+      throw errorMessage
+    }
+  })
+
   ipcMain.handle('ollama:list-models', async () => {
     try {
       console.log('Attempting to fetch models from Ollama...')

@@ -5,7 +5,9 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld(
   'api', {
     // Ollama API methods
+    getOllamaVersion: () => ipcRenderer.invoke('ollama:version'),
     listModels: () => ipcRenderer.invoke('ollama:list-models'),
+    pullModel: (name) => ipcRenderer.invoke('ollama:pull-model', name),
     chat: (model, messages, stream = true) => ipcRenderer.invoke('ollama:chat', { model, messages, stream }),
     generateCompletion: (model, prompt) => ipcRenderer.invoke('ollama:generate', { model, prompt }),
     
