@@ -203,9 +203,9 @@ async function setupIpcHandlers(mainWindow) {
   })
 
   // Chat history handlers
-  ipcMain.handle('conversation:create', async (_, { title, model_name }) => {
+  ipcMain.handle('conversation:create', async (_, { title, model_name, system_prompt }) => {
     try {
-      return db_helpers.createConversation(title, model_name)
+      return db_helpers.createConversation(title, model_name, system_prompt)
     } catch (error) {
       console.error('Error creating conversation:', error)
       throw { message: 'Failed to create conversation', details: error.message }
@@ -239,9 +239,18 @@ async function setupIpcHandlers(mainWindow) {
     }
   })
 
-  ipcMain.handle('conversation:update', async (_, { id, title }) => {
+  ipcMain.handle('conversation:update', async (_, { id, title, system_prompt }) => {
     try {
-      return db_helpers.updateConversationTitle(id, title)
+      return db_helpers.updateConversationTitle(id, title, system_prompt)
+    } catch (error) {
+      console.error('Error updating conversation:', error)
+      throw { message: 'Failed to update conversation', details: error.message }
+    }
+  })
+
+  ipcMain.handle('conversation:update-system-prompt', async (_, { id, system_prompt }) => {
+    try {
+      return db_helpers.updateSystemPrompt(id, system_prompt)
     } catch (error) {
       console.error('Error updating conversation:', error)
       throw { message: 'Failed to update conversation', details: error.message }

@@ -20,6 +20,7 @@ db.exec(`
     id TEXT PRIMARY KEY,
     title TEXT NOT NULL,
     model_name TEXT NOT NULL,
+    system_prompt TEXT DEFAULT 'You are a helpful assistant.',
     created_at DATETIME NOT NULL
   );
 
@@ -37,13 +38,19 @@ db.exec(`
 export const dbOperations = {
   // Conversations
   createConversation: db.prepare(`
-    INSERT INTO conversations (id, title, model_name, created_at)
-    VALUES (?, ?, ?, datetime('now'))
+    INSERT INTO conversations (id, title, model_name, system_prompt, created_at)
+    VALUES (?, ?, ?, ?, datetime('now'))
   `),
 
   updateConversation: db.prepare(`
     UPDATE conversations
-    SET title = ?
+    SET title = ?, system_prompt = ?
+    WHERE id = ?
+  `),
+
+  updateSystemPrompt: db.prepare(`
+    UPDATE conversations
+    SET system_prompt = ?
     WHERE id = ?
   `),
 
@@ -74,9 +81,9 @@ export const dbOperations = {
 
 // Helper functions
 export const db_helpers = {
-  createConversation(title, model_name) {
+  createConversation(title, model_name, system_prompt) {
     const id = uuidv4()
-    dbOperations.createConversation.run(id, title, model_name)
+    dbOperations.createConversation.run(id, title, model_name, system_prompt)
     return dbOperations.getConversation.get(id)
   },
 
@@ -92,8 +99,13 @@ export const db_helpers = {
     dbOperations.deleteConversation.run(id)
   },
 
-  updateConversationTitle(id, title) {
-    dbOperations.updateConversation.run(title, id)
+  updateConversationTitle(id, title, system_prompt) {
+    dbOperations.updateConversation.run(title, system_prompt, id)
+    return dbOperations.getConversation.get(id)
+  },
+
+  updateSystemPrompt(id, system_prompt) {
+    dbOperations.updateSystemPrompt.run(system_prompt, id)
     return dbOperations.getConversation.get(id)
   },
 

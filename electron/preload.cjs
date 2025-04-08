@@ -12,16 +12,18 @@ contextBridge.exposeInMainWorld(
     generateCompletion: (model, prompt) => ipcRenderer.invoke('ollama:generate', { model, prompt }),
     
     // Chat history methods
-    createConversation: (title, model_name) => 
-      ipcRenderer.invoke('conversation:create', { title, model_name }),
+    createConversation: (title, model_name, system_prompt) => 
+      ipcRenderer.invoke('conversation:create', { title, model_name, system_prompt }),
     listConversations: () => 
       ipcRenderer.invoke('conversation:list'),
     getConversation: (id) => 
       ipcRenderer.invoke('conversation:get', { id }),
     deleteConversation: (id) => 
       ipcRenderer.invoke('conversation:delete', { id }),
-    updateConversation: (id, title) =>
-      ipcRenderer.invoke('conversation:update', { id, title }),
+    updateConversation: (id, title, system_prompt) =>
+      ipcRenderer.invoke('conversation:update', { id, title, system_prompt }),
+    updateSystemPrompt: (id, system_prompt) =>
+      ipcRenderer.invoke('conversation:update-system-prompt', { id, system_prompt }),
     addMessage: (conversation_id, role, content) => 
       ipcRenderer.invoke('message:add', { conversation_id, role, content }),
     getMessages: (conversation_id) => 

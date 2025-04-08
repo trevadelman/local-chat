@@ -77,13 +77,8 @@
     "copyright": "Copyright © 2025 Trevor Adelman",
     "mac": {
       "category": "public.app-category.developer-tools",
-      "icon": "build/icon.icns",
       "target": ["dmg", "zip"],
-      "darkModeSupport": true,
-      "hardenedRuntime": true,
-      "gatekeeperAssess": false,
-      "entitlements": "build/entitlements.mac.plist",
-      "entitlementsInherit": "build/entitlements.mac.plist"
+      "darkModeSupport": true
     },
     "win": {
       "icon": "build/icon.ico",
@@ -106,7 +101,6 @@
       "shortcutName": "Local Chat"
     },
     "dmg": {
-      "icon": "build/icon.icns",
       "contents": [
         {
           "x": 130,

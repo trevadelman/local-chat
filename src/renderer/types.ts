@@ -28,6 +28,7 @@ export interface Conversation {
   id: string
   title: string
   model_name: string
+  system_prompt: string
   created_at: string
 }
 
@@ -53,16 +54,25 @@ declare global {
       // Ollama API methods
       getOllamaVersion: () => Promise<string>
       listModels: () => Promise<OllamaModel[]>
-      pullModel: (name: string) => Promise<any>
-      chat: (model: string, messages: OllamaMessage[], stream?: boolean) => Promise<any>
-      generateCompletion: (model: string, prompt: string) => Promise<any>
+      pullModel: (name: string) => Promise<{ status: string }>
+      chat: (model: string, messages: OllamaMessage[], stream?: boolean) => Promise<{
+        message: OllamaMessage
+        done: boolean
+        prompt_eval_count?: number
+        eval_count?: number
+      }>
+      generateCompletion: (model: string, prompt: string) => Promise<{
+        response: string
+        done: boolean
+      }>
       
       // Chat history methods
-      createConversation: (title: string, model_name: string) => Promise<Conversation>
+      createConversation: (title: string, model_name: string, system_prompt?: string) => Promise<Conversation>
       listConversations: () => Promise<Conversation[]>
       getConversation: (id: string) => Promise<Conversation | undefined>
       deleteConversation: (id: string) => Promise<void>
-      updateConversation: (id: string, title: string) => Promise<Conversation>
+      updateConversation: (id: string, title: string, system_prompt: string) => Promise<Conversation>
+      updateSystemPrompt: (id: string, system_prompt: string) => Promise<Conversation>
       addMessage: (conversation_id: string, role: 'user' | 'assistant', content: string) => Promise<Message>
       getMessages: (conversation_id: string) => Promise<Message[]>
       
@@ -73,7 +83,7 @@ declare global {
       // Event handlers
       onModelLoading: (callback: () => void) => void
       onModelLoaded: (callback: () => void) => void
-      onError: (callback: (error: any) => void) => void
+      onError: (callback: (error: { message: string; details?: string }) => void) => void
       onChatChunk: (callback: (data: ChatChunk) => void) => () => void
     }
   }

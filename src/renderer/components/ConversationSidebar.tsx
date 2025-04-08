@@ -45,7 +45,11 @@ export function ConversationSidebar({ onSelectConversation, currentConversation,
     e.preventDefault()
     e.stopPropagation()
     try {
-      const updatedConversation = await window.api.updateConversation(conversation.id, editTitle)
+      const updatedConversation = await window.api.updateConversation(
+        conversation.id, 
+        editTitle, 
+        conversation.system_prompt
+      )
       setConversations(prev => prev.map(c => 
         c.id === conversation.id ? updatedConversation : c
       ))

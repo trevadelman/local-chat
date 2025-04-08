@@ -1,26 +1,26 @@
 import { useState } from 'react'
 import { OllamaModel } from '../types'
 import { ModelCard } from './ModelCard'
-import { ResponseModeCard } from './ResponseModeCard'
 import { OllamaStatus } from './OllamaStatus'
+import { SystemPromptModal } from './SystemPromptModal'
 
 interface ChatConfigProps {
   models: OllamaModel[]
   selectedModel: string
   onModelChange: (model: string) => void
-  responseMode: 'concise' | 'normal' | 'longform'
-  onResponseModeChange: (mode: 'concise' | 'normal' | 'longform') => void
+  systemPrompt: string
+  onSystemPromptChange: (prompt: string) => void
 }
 
 export function ChatConfig({
   models, 
   selectedModel, 
   onModelChange,
-  responseMode,
-  onResponseModeChange
+  systemPrompt,
+  onSystemPromptChange
 }: ChatConfigProps) {
   const [showModelPicker, setShowModelPicker] = useState(false)
-  const [showResponseModePicker, setShowResponseModePicker] = useState(false)
+  const [showSystemPrompt, setShowSystemPrompt] = useState(false)
   const [showOllamaStatus, setShowOllamaStatus] = useState(false)
 
   return (
@@ -72,50 +72,30 @@ export function ChatConfig({
           )}
         </div>
 
-        {/* Response mode selector */}
+        {/* System Prompt Button */}
         <div className="relative">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-            Response Style
+            System Prompt
           </label>
           <button
-            onClick={() => setShowResponseModePicker(!showResponseModePicker)}
+            onClick={() => setShowSystemPrompt(true)}
             className="flex items-center gap-2 text-sm px-3 py-1.5 rounded border dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-900 dark:text-white hover:bg-gray-50 dark:hover:bg-gray-700/50 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
-            <span className="capitalize">{responseMode}</span>
             <svg
-              className={`w-4 h-4 transform transition-transform ${showResponseModePicker ? 'rotate-180' : ''}`}
+              className="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-            </svg>
-          </button>
-
-          {/* Response mode picker dropdown */}
-          {showResponseModePicker && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setShowResponseModePicker(false)}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
               />
-              <div className="absolute z-20 mt-1 w-[300px] bg-white dark:bg-gray-800 rounded-lg shadow-lg border dark:border-gray-700">
-                <div className="p-2 grid gap-2">
-                  {(['concise', 'normal', 'longform'] as const).map(mode => (
-                    <ResponseModeCard
-                      key={mode}
-                      mode={mode}
-                      selected={mode === responseMode}
-                      onClick={() => {
-                        onResponseModeChange(mode)
-                        setShowResponseModePicker(false)
-                      }}
-                    />
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
+            </svg>
+            <span>Edit Prompt</span>
+          </button>
         </div>
       </div>
 
@@ -146,10 +126,16 @@ export function ChatConfig({
         <span>Ollama Status</span>
       </button>
 
-      {/* Ollama Status Modal */}
+      {/* Modals */}
       <OllamaStatus
         isOpen={showOllamaStatus}
         onClose={() => setShowOllamaStatus(false)}
+      />
+      <SystemPromptModal
+        isOpen={showSystemPrompt}
+        onClose={() => setShowSystemPrompt(false)}
+        currentPrompt={systemPrompt}
+        onSave={onSystemPromptChange}
       />
     </div>
   )

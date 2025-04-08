@@ -14,7 +14,7 @@ interface ChatInterfaceProps {
 }
 
 interface CodeProps {
-  node?: any
+  node?: unknown
   inline?: boolean
   className?: string
   children?: React.ReactNode
@@ -25,18 +25,7 @@ interface ProcessedContent {
   response: string
 }
 
-type ResponseMode = 'concise' | 'normal' | 'longform'
-
-const getSystemPrompt = (mode: ResponseMode) => {
-  switch (mode) {
-    case 'concise':
-      return 'Provide a brief, direct answer focusing only on key points. Do not label or announce that this is a concise response.'
-    case 'normal':
-      return 'Provide a balanced response with explanations and examples.'
-    case 'longform':
-      return 'Provide a detailed analysis with comprehensive context and thorough explanations.'
-  }
-}
+const DEFAULT_SYSTEM_PROMPT = 'You are a helpful assistant.'
 
 function processContent(content: string): ProcessedContent {
   const thinkMatch = content.match(/<think>(.*?)<\/think>/s)
@@ -57,7 +46,7 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
   const [promptTokens, setPromptTokens] = useState(0)
   const [responseTokens, setResponseTokens] = useState(0)
   const [maxContext, setMaxContext] = useState(4096) // Default, will be updated from model info
-  const [responseMode, setResponseMode] = useState<ResponseMode>('normal')
+  const [systemPrompt, setSystemPrompt] = useState(DEFAULT_SYSTEM_PROMPT)
   const [models, setModels] = useState<OllamaModel[]>([])
   const [selectedModel, setSelectedModel] = useState('')
   const textareaRef = useRef<HTMLTextAreaElement>(null)
@@ -102,8 +91,15 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
   useEffect(() => {
     if (currentConversation) {
       loadMessages(currentConversation.id)
+      // Load system prompt from conversation
+      if (currentConversation.system_prompt) {
+        setSystemPrompt(currentConversation.system_prompt)
+      } else {
+        setSystemPrompt(DEFAULT_SYSTEM_PROMPT)
+      }
     } else {
       setMessages([])
+      setSystemPrompt(DEFAULT_SYSTEM_PROMPT)
     }
   }, [currentConversation])
 
@@ -208,7 +204,8 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
         // First create with temporary title
         const newConversation = await window.api.createConversation(
           'New Chat',
-          selectedModel
+          selectedModel,
+          systemPrompt
         )
         activeConversation = newConversation
         onConversationCreated(newConversation)
@@ -231,7 +228,8 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
             // Update conversation with generated title
             const updatedConversation = await window.api.updateConversation(
               newConversation.id,
-              titleResponse.message.content.trim()
+              titleResponse.message.content.trim(),
+              systemPrompt
             )
             onConversationCreated(updatedConversation)
           }
@@ -289,7 +287,7 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
       const ollamaMessages: OllamaMessage[] = [
         {
           role: 'system',
-          content: getSystemPrompt(responseMode)
+          content: systemPrompt
         },
         ...conversationHistory.map(msg => ({
           role: msg.role,
@@ -368,10 +366,10 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
               remarkPlugins={[remarkGfm, remarkMath]}
               rehypePlugins={[rehypeKatex]}
               components={{
-                pre: ({ children }) => {
+                pre: function PreComponent({ children }) {
                   // Get the code content from the pre element's innerText
-                  const preRef = React.useRef<HTMLPreElement>(null);
-                  React.useEffect(() => {
+                  const preRef = useRef<HTMLPreElement>(null);
+                  useEffect(() => {
                     if (preRef.current) {
                       const codeElement = preRef.current.querySelector('code');
                       if (codeElement) {
@@ -497,8 +495,15 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
         models={models}
         selectedModel={selectedModel}
         onModelChange={setSelectedModel}
-        responseMode={responseMode}
-        onResponseModeChange={setResponseMode}
+        systemPrompt={systemPrompt}
+        onSystemPromptChange={(newPrompt) => {
+          setSystemPrompt(newPrompt)
+          // Update system prompt in database if conversation exists
+          if (currentConversation) {
+            window.api.updateSystemPrompt(currentConversation.id, newPrompt)
+              .catch(error => console.error('Error updating system prompt:', error))
+          }
+        }}
       />
 
       {/* Chat messages */}
