@@ -11,6 +11,29 @@ export interface OllamaModel {
   }
 }
 
+export interface OllamaModelInfo {
+  modelfile: string
+  parameters: string
+  template: string
+  details: {
+    parent_model: string
+    format: string
+    family: string
+    families: string[]
+    parameter_size: string
+    quantization_level: string
+  }
+  model_info: {
+    [key: string]: string | number | boolean | string[] | null | undefined
+    "general.architecture"?: string
+    "general.file_type"?: number
+    "general.parameter_count"?: number
+    "general.quantization_version"?: number
+    "llama.context_length"?: number
+  }
+  capabilities: string[]
+}
+
 export interface Message {
   id: string
   conversation_id: string
@@ -55,6 +78,7 @@ declare global {
       getOllamaVersion: () => Promise<string>
       listModels: () => Promise<OllamaModel[]>
       pullModel: (name: string) => Promise<{ status: string }>
+      showModel: (model: string, verbose?: boolean) => Promise<OllamaModelInfo>
       chat: (model: string, messages: OllamaMessage[], stream?: boolean) => Promise<{
         message: OllamaMessage
         done: boolean

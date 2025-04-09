@@ -105,13 +105,61 @@ export function ChatInterface({ currentConversation, onConversationCreated }: Ch
 
   // Update context length when model changes
   useEffect(() => {
-    const model = models.find(m => m.name === selectedModel)
-    if (model?.details?.parameter_size) {
-      const sizeInB = parseInt(model.details.parameter_size.replace('B', ''))
-      const contextLength = sizeInB <= 7 ? 4096 : 8192
-      setMaxContext(contextLength)
-    }
-  }, [selectedModel, models])
+    const fetchModelInfo = async () => {
+      if (!selectedModel) return;
+      
+      try {
+        const modelInfo = await window.api.showModel(selectedModel);
+        console.log('Model info:', modelInfo);
+        
+        // Check for context length in model_info based on architecture
+        if (modelInfo.model_info) {
+          // Get the architecture from the model info
+          const architecture = modelInfo.model_info["general.architecture"];
+          
+          // Look for context length based on architecture
+          let contextLength = null;
+          if (architecture) {
+            contextLength = modelInfo.model_info[`${architecture}.context_length`];
+          }
+          
+          // If we found a context length, use it
+          if (contextLength) {
+            console.log(`Found context length for ${architecture}: ${contextLength}`);
+            setMaxContext(Number(contextLength));
+            return;
+          }
+          
+          // Fallback to llama.context_length for backward compatibility
+          if (modelInfo.model_info["llama.context_length"]) {
+            console.log(`Using llama.context_length: ${modelInfo.model_info["llama.context_length"]}`);
+            setMaxContext(Number(modelInfo.model_info["llama.context_length"]));
+            return;
+          }
+        }
+        
+        // Fallback to estimation based on parameter size
+        if (modelInfo.details?.parameter_size) {
+          const sizeInB = parseInt(modelInfo.details.parameter_size.replace('B', ''));
+          const contextLength = sizeInB <= 7 ? 4096 : 8192;
+          console.log(`Estimating context length based on parameter size: ${contextLength}`);
+          setMaxContext(contextLength);
+        }
+      } catch (error) {
+        console.error('Error fetching model info:', error);
+        // Fallback to the old method if the show API fails
+        const model = models.find(m => m.name === selectedModel);
+        if (model?.details?.parameter_size) {
+          const sizeInB = parseInt(model.details.parameter_size.replace('B', ''));
+          const contextLength = sizeInB <= 7 ? 4096 : 8192;
+          console.log(`Fallback context length: ${contextLength}`);
+          setMaxContext(contextLength);
+        }
+      }
+    };
+
+    fetchModelInfo();
+  }, [selectedModel, models]);
 
   // Auto-resize textarea as content grows
   useEffect(() => {

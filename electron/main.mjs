@@ -116,6 +116,41 @@ async function setupIpcHandlers(mainWindow) {
     }
   })
 
+  ipcMain.handle('ollama:show-model', async (_, { model, verbose = false }) => {
+    try {
+      console.log(`Fetching model info for ${model}...`)
+      const response = await ollamaApi.post('/show', {
+        model,
+        verbose
+      })
+      console.log('Successfully fetched model info')
+      return response.data
+    } catch (error) {
+      console.error('Error fetching model info:', {
+        code: error.code,
+        message: error.message,
+        response: error.response?.data,
+        stack: error.stack
+      })
+
+      if (error.code === 'ECONNREFUSED') {
+        const errorMessage = {
+          message: 'Unable to connect to Ollama',
+          details: `Please make sure Ollama is running and accessible at http://127.0.0.1:11434. Error: ${error.message}`
+        }
+        mainWindow.webContents.send('error', errorMessage)
+        throw errorMessage
+      }
+      
+      const errorMessage = {
+        message: 'Failed to fetch model info',
+        details: `Error: ${error.message}`
+      }
+      mainWindow.webContents.send('error', errorMessage)
+      throw errorMessage
+    }
+  })
+
   ipcMain.handle('ollama:chat', async (_, { model, messages, stream = true }) => {
     try {
       if (!stream) {

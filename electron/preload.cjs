@@ -8,6 +8,7 @@ contextBridge.exposeInMainWorld(
     getOllamaVersion: () => ipcRenderer.invoke('ollama:version'),
     listModels: () => ipcRenderer.invoke('ollama:list-models'),
     pullModel: (name) => ipcRenderer.invoke('ollama:pull-model', name),
+    showModel: (model, verbose = false) => ipcRenderer.invoke('ollama:show-model', { model, verbose }),
     chat: (model, messages, stream = true) => ipcRenderer.invoke('ollama:chat', { model, messages, stream }),
     generateCompletion: (model, prompt) => ipcRenderer.invoke('ollama:generate', { model, prompt }),
     
