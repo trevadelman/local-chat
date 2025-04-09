@@ -136,6 +136,7 @@ export function ChatConfig({
         onClose={() => setShowSystemPrompt(false)}
         currentPrompt={systemPrompt}
         onSave={onSystemPromptChange}
+        selectedModel={selectedModel}
       />
     </div>
   )
